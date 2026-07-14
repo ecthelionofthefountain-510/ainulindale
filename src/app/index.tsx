@@ -30,22 +30,19 @@ import { getRegion, RegionKey } from '@/theme/regions';
 
 const MIDDLE_EARTH = require('../../assets/middle-earth.jpg');
 
-type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
-
 interface MarkerDef {
   region: RegionKey;
   route: string;
-  icon: IconName;
   /** Fractional position on the chart (0..1). */
   x: number;
   y: number;
 }
 
 const MARKERS: MarkerDef[] = [
-  { region: 'shire', route: '/shire', icon: 'sprout', x: 0.12, y: 0.25 },
-  { region: 'rivendell', route: '/rivendell', icon: 'waves', x: 0.42, y: 0.28 },
-  { region: 'minas-tirith', route: '/minas-tirith', icon: 'castle', x: 0.44, y: 0.57 },
-  { region: 'mordor', route: '/mordor', icon: 'triangle', x: 0.8, y: 0.69 },
+  { region: 'shire', route: '/shire', x: 0.12, y: 0.25 },
+  { region: 'rivendell', route: '/rivendell', x: 0.42, y: 0.28 },
+  { region: 'minas-tirith', route: '/minas-tirith', x: 0.44, y: 0.57 },
+  { region: 'mordor', route: '/mordor', x: 0.8, y: 0.69 },
 ];
 
 export default function MapScreen() {
@@ -132,34 +129,36 @@ export default function MapScreen() {
   );
 }
 
+/** A place is marked only by a soft breathing glow and a slow ring pulsing out —
+ *  a quiet "you can go here" that stays out of the map's way. */
 function MapMarker({ def, onPress }: { def: MarkerDef; onPress: () => void }) {
   const t = getRegion(def.region);
   const pulse = useSharedValue(0);
+  const breathe = useSharedValue(0);
 
   useEffect(() => {
-    pulse.value = withRepeat(withTiming(1, { duration: 2600, easing: Easing.out(Easing.quad) }), -1, false);
-  }, [pulse]);
+    pulse.value = withRepeat(withTiming(1, { duration: 3000, easing: Easing.out(Easing.quad) }), -1, false);
+    breathe.value = withRepeat(withTiming(1, { duration: 1900, easing: Easing.inOut(Easing.quad) }), -1, true);
+  }, [pulse, breathe]);
 
-  const halo = useAnimatedStyle(() => ({
-    opacity: interpolate(pulse.value, [0, 1], [0.5, 0]),
-    transform: [{ scale: interpolate(pulse.value, [0, 1], [0.8, 2.2]) }],
+  const ring = useAnimatedStyle(() => ({
+    opacity: interpolate(pulse.value, [0, 1], [0.4, 0]),
+    transform: [{ scale: interpolate(pulse.value, [0, 1], [0.5, 2.6]) }],
+  }));
+  const core = useAnimatedStyle(() => ({
+    opacity: interpolate(breathe.value, [0, 1], [0.4, 0.8]),
+    transform: [{ scale: interpolate(breathe.value, [0, 1], [0.85, 1.12]) }],
   }));
 
   return (
     <Pressable
       onPress={onPress}
+      hitSlop={20}
       style={[styles.marker, { left: `${def.x * 100}%`, top: `${def.y * 100}%` }]}
       accessibilityRole="button"
       accessibilityLabel={t.name}>
-      <View style={styles.markerDotWrap}>
-        <Animated.View style={[styles.halo, { backgroundColor: t.glow }, halo]} />
-        <View style={[styles.dot, { backgroundColor: t.glow, borderColor: '#fbf3dc' }]}>
-          <MaterialCommunityIcons name={def.icon} size={13} color="#fbf3dc" />
-        </View>
-      </View>
-      <View style={styles.label}>
-        <Text style={styles.labelText}>{t.name}</Text>
-      </View>
+      <Animated.View style={[styles.markerRing, { borderColor: t.glow }, ring]} />
+      <Animated.View style={[styles.markerCore, { backgroundColor: t.glow, shadowColor: t.glow }, core]} />
     </Pressable>
   );
 }
@@ -192,26 +191,23 @@ const styles = StyleSheet.create({
   },
   sealText: { fontFamily: AppFonts.bodyMedium, fontSize: 13, color: '#5a3320', letterSpacing: 0.3 },
 
-  marker: { position: 'absolute', alignItems: 'center' },
-  markerDotWrap: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
-  halo: { position: 'absolute', width: 30, height: 30, borderRadius: 15 },
-  dot: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+  marker: {
+    position: 'absolute',
+    width: 40,
+    height: 40,
+    marginLeft: -20,
+    marginTop: -20,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
-    elevation: 4,
   },
-  label: {
-    marginTop: 5,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-    backgroundColor: 'rgba(251,243,220,0.82)',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(90,51,32,0.35)',
+  markerRing: { position: 'absolute', width: 24, height: 24, borderRadius: 12, borderWidth: 2 },
+  markerCore: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    shadowOpacity: 0.95,
+    shadowRadius: 7,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 6,
   },
-  labelText: { fontFamily: AppFonts.displayMedium, fontSize: 14, color: '#3f2d18', letterSpacing: 0.5 },
 });
