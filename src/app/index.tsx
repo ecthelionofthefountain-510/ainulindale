@@ -59,9 +59,12 @@ export default function MapScreen() {
   const tx = useSharedValue(0.5);
   const ty = useSharedValue(0.5);
 
+  // On arrival (and return from a place) fly out: start zoomed into the last
+  // marker, then pull back to the whole chart.
   useFocusEffect(
     useCallback(() => {
-      dive.value = 0;
+      dive.value = 1;
+      dive.value = withTiming(0, { duration: 560, easing: Easing.out(Easing.cubic) });
     }, [dive]),
   );
 
@@ -75,16 +78,18 @@ export default function MapScreen() {
     });
   };
 
-  // The chart pitches forward and rushes toward the marker, blowing past into a
-  // dark whoosh — a first-person "fly in" rather than a flat zoom.
+  // The chart pitches forward and rushes toward the *tapped marker* (translation
+  // is scaled by the zoom so the marker actually reaches centre), blowing past
+  // into a dark whoosh — a first-person "fly in" rather than a flat zoom.
+  const DIVE_SCALE = 4.2;
   const worldStyle = useAnimatedStyle(() => ({
     opacity: interpolate(dive.value, [0, 0.75, 1], [1, 1, 0]),
     transform: [
       { perspective: 900 },
-      { translateX: (0.5 - tx.value) * width * dive.value },
-      { translateY: (0.5 - ty.value) * height * dive.value },
+      { translateX: interpolate(dive.value, [0, 1], [0, (0.5 - tx.value) * width * DIVE_SCALE]) },
+      { translateY: interpolate(dive.value, [0, 1], [0, (0.5 - ty.value) * height * DIVE_SCALE]) },
       { rotateX: `${interpolate(dive.value, [0, 1], [0, 14])}deg` },
-      { scale: interpolate(dive.value, [0, 1], [1, 4.2]) },
+      { scale: interpolate(dive.value, [0, 1], [1, DIVE_SCALE]) },
     ],
   }));
   const flashStyle = useAnimatedStyle(() => ({ opacity: interpolate(dive.value, [0, 0.65, 1], [0, 0, 0.72]) }));

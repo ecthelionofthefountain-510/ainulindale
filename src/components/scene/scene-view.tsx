@@ -12,12 +12,13 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { ReactNode, useEffect } from 'react';
+import { ReactNode, useCallback, useEffect } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
   Easing,
   interpolate,
+  runOnJS,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
@@ -80,14 +81,30 @@ export function SceneView({
     push.value = withTiming(zoomed ? 1 : 0, { duration: 460, easing: Easing.out(Easing.cubic) });
   }, [zoomed, push]);
 
+  // Leaving flies back out: the room pulls away and fades into a whoosh, then the
+  // map takes over (and pulls back to the chart from this same place).
+  const exit = useSharedValue(0);
+  const goBack = useCallback(() => router.back(), [router]);
+  const leave = () => {
+    exit.value = withTiming(1, { duration: 360, easing: Easing.in(Easing.cubic) }, (done) => {
+      if (done) runOnJS(goBack)();
+    });
+  };
+
   // Fly in and land: the room arrives from far out with a forward pitch, then
-  // decelerates level to rest. Opacity is never gated (the navigator cross-fades,
-  // and it must stay visible even if an animation frame is dropped).
+  // decelerates level to rest. Opacity is never gated on enter (the navigator
+  // cross-fades, and it must stay visible even if a frame is dropped).
   const worldStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(exit.value, [0, 1], [1, 0]),
     transform: [
       { perspective: 1000 },
       { rotateX: `${interpolate(enter.value, [0, 1], [7, 0])}deg` },
-      { scale: interpolate(enter.value, [0, 1], [2.1, WORLD_SCALE]) * (1 + push.value * 0.16) },
+      {
+        scale:
+          interpolate(enter.value, [0, 1], [2.1, WORLD_SCALE]) *
+          (1 + push.value * 0.16) *
+          interpolate(exit.value, [0, 1], [1, 0.82]),
+      },
     ],
   }));
   const chromeStyle = useAnimatedStyle(() => ({
@@ -121,7 +138,7 @@ export function SceneView({
             {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
           </View>
           <Pressable
-            onPress={() => router.back()}
+            onPress={leave}
             style={styles.mapBtn}
             accessibilityRole="button"
             accessibilityLabel="Back to the map of Arda">
