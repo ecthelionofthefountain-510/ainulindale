@@ -71,7 +71,7 @@ export function SceneView({
   // and the chrome settles a beat later, so you "travel into" the scene.
   const enter = useSharedValue(0);
   useEffect(() => {
-    enter.value = withTiming(1, { duration: 620, easing: Easing.out(Easing.cubic) });
+    enter.value = withTiming(1, { duration: 680, easing: Easing.out(Easing.cubic) });
   }, [enter]);
 
   // Opening a panel leans the world in toward the object; closing eases it back.
@@ -80,11 +80,14 @@ export function SceneView({
     push.value = withTiming(zoomed ? 1 : 0, { duration: 460, easing: Easing.out(Easing.cubic) });
   }, [zoomed, push]);
 
-  // Scale-only rush-in (the navigator already cross-fades between screens, so we
-  // never gate the world on opacity — it stays visible even mid-animation).
+  // Fly in and land: the room arrives from far out with a forward pitch, then
+  // decelerates level to rest. Opacity is never gated (the navigator cross-fades,
+  // and it must stay visible even if an animation frame is dropped).
   const worldStyle = useAnimatedStyle(() => ({
     transform: [
-      { scale: interpolate(enter.value, [0, 1], [1.28, WORLD_SCALE]) * (1 + push.value * 0.16) },
+      { perspective: 1000 },
+      { rotateX: `${interpolate(enter.value, [0, 1], [7, 0])}deg` },
+      { scale: interpolate(enter.value, [0, 1], [2.1, WORLD_SCALE]) * (1 + push.value * 0.16) },
     ],
   }));
   const chromeStyle = useAnimatedStyle(() => ({

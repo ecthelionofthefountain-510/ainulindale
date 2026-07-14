@@ -69,19 +69,25 @@ export default function MapScreen() {
   const enterPlace = (m: MarkerDef) => {
     tx.value = m.x;
     ty.value = m.y;
-    dive.value = withTiming(1, { duration: 440, easing: Easing.in(Easing.cubic) }, (done) => {
+    // Accelerate the whole way in — a flight that gathers speed toward the place.
+    dive.value = withTiming(1, { duration: 520, easing: Easing.in(Easing.cubic) }, (done) => {
       if (done) runOnJS(go)(m.route);
     });
   };
 
+  // The chart pitches forward and rushes toward the marker, blowing past into a
+  // dark whoosh — a first-person "fly in" rather than a flat zoom.
   const worldStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(dive.value, [0, 1], [1, 0]),
+    opacity: interpolate(dive.value, [0, 0.75, 1], [1, 1, 0]),
     transform: [
+      { perspective: 900 },
       { translateX: (0.5 - tx.value) * width * dive.value },
       { translateY: (0.5 - ty.value) * height * dive.value },
-      { scale: interpolate(dive.value, [0, 1], [1, 2.6]) },
+      { rotateX: `${interpolate(dive.value, [0, 1], [0, 14])}deg` },
+      { scale: interpolate(dive.value, [0, 1], [1, 4.2]) },
     ],
   }));
+  const flashStyle = useAnimatedStyle(() => ({ opacity: interpolate(dive.value, [0, 0.65, 1], [0, 0, 0.72]) }));
 
   return (
     <View style={styles.root}>
@@ -115,6 +121,8 @@ export default function MapScreen() {
           </View>
         </View>
       </SafeAreaView>
+
+      <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.diveFlash, flashStyle]} />
     </View>
   );
 }
@@ -160,6 +168,7 @@ const styles = StyleSheet.create({
     borderRadius: 30,
   },
   headerScrim: { position: 'absolute', top: 0, left: 0, right: 0, height: '24%' },
+  diveFlash: { backgroundColor: '#0a0e24' },
 
   header: { alignItems: 'center', gap: 3, paddingTop: 10, paddingHorizontal: 24 },
   greeting: { fontFamily: AppFonts.displayItalic, fontSize: 34, color: '#3f2d18', letterSpacing: 0.5 },
