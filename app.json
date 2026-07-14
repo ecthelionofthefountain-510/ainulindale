@@ -1,12 +1,12 @@
 {
   "expo": {
-    "name": ".scaffold",
-    "slug": ".scaffold",
+    "name": "Arda",
+    "slug": "tolkien-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "scaffold",
-    "userInterfaceStyle": "automatic",
+    "scheme": "arda",
+    "userInterfaceStyle": "dark",
     "ios": {
       "icon": "./assets/expo.icon"
     },
@@ -21,14 +21,20 @@
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/favicon.png",
+      "name": "Arda",
+      "shortName": "Arda",
+      "themeColor": "#0a0e24",
+      "backgroundColor": "#0a0e24",
+      "display": "standalone",
+      "orientation": "portrait"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
+          "backgroundColor": "#0a0e24",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
@@ -36,7 +42,8 @@
     ],
     "experiments": {
       "typedRoutes": true,
-      "reactCompiler": true
+      "reactCompiler": true,
+      "baseUrl": "/ainulindale"
     }
   }
 }

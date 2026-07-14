@@ -1,98 +1,203 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
+/**
+ * The map of Arda — the home page and the whole navigation. A wood-burned chart
+ * of Middle-earth: the Shire in the northwest, Rivendell in the mountain valley,
+ * Minas Tirith in the centre and Mordor's volcano to the southeast. Each place
+ * bears a marker you tap to journey there; the marker coords are fractions of the
+ * map image, tuned to where each place sits on it.
+ */
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import { useCallback, useEffect } from 'react';
+import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, {
+  Easing,
+  interpolate,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { TOTAL_WORKS } from '@/data/works';
+import { useReading } from '@/state/reading';
+import { AppFonts } from '@/theme/fonts';
+import { getRegion, RegionKey } from '@/theme/regions';
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
+const MIDDLE_EARTH = require('../../assets/middle-earth.jpg');
+
+type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
+
+interface MarkerDef {
+  region: RegionKey;
+  route: string;
+  icon: IconName;
+  /** Fractional position on the chart (0..1). */
+  x: number;
+  y: number;
+}
+
+const MARKERS: MarkerDef[] = [
+  { region: 'shire', route: '/shire', icon: 'sprout', x: 0.12, y: 0.25 },
+  { region: 'rivendell', route: '/rivendell', icon: 'waves', x: 0.42, y: 0.28 },
+  { region: 'minas-tirith', route: '/minas-tirith', icon: 'castle', x: 0.44, y: 0.57 },
+  { region: 'mordor', route: '/mordor', icon: 'triangle', x: 0.8, y: 0.69 },
+];
+
+export default function MapScreen() {
+  const router = useRouter();
+  const { readCount } = useReading();
+  const { width, height } = useWindowDimensions();
+
+  // Tapping a place "dives" the chart toward it — zoom in on the marker and fade,
+  // then travel there. Reset on return so the map is whole again.
+  const dive = useSharedValue(0);
+  const tx = useSharedValue(0.5);
+  const ty = useSharedValue(0.5);
+
+  useFocusEffect(
+    useCallback(() => {
+      dive.value = 0;
+    }, [dive]),
+  );
+
+  const go = useCallback((route: string) => router.navigate(route as never), [router]);
+  const enterPlace = (m: MarkerDef) => {
+    tx.value = m.x;
+    ty.value = m.y;
+    dive.value = withTiming(1, { duration: 440, easing: Easing.in(Easing.cubic) }, (done) => {
+      if (done) runOnJS(go)(m.route);
+    });
+  };
+
+  const worldStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(dive.value, [0, 1], [1, 0]),
+    transform: [
+      { translateX: (0.5 - tx.value) * width * dive.value },
+      { translateY: (0.5 - ty.value) * height * dive.value },
+      { scale: interpolate(dive.value, [0, 1], [1, 2.6]) },
+    ],
+  }));
+
   return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
+    <View style={styles.root}>
+      <StatusBar style="dark" animated />
+
+      <Animated.View style={[StyleSheet.absoluteFill, worldStyle]}>
+        <Image source={MIDDLE_EARTH} style={StyleSheet.absoluteFill} contentFit="cover" />
+        {MARKERS.map((m) => (
+          <MapMarker key={m.region} def={m} onPress={() => enterPlace(m)} />
+        ))}
+      </Animated.View>
+
+      <View pointerEvents="none" style={styles.burntEdge} />
+
+      <LinearGradient
+        colors={['rgba(244,235,212,0.92)', 'rgba(244,235,212,0.5)', 'rgba(244,235,212,0)']}
+        locations={[0, 0.6, 1]}
+        pointerEvents="none"
+        style={styles.headerScrim}
+      />
+
+      <SafeAreaView edges={['top']} pointerEvents="box-none">
+        <View style={styles.header} pointerEvents="box-none">
+          <Text style={styles.greeting}>Mae govannen</Text>
+          <Text style={styles.subtitle}>Choose where in Arda to wander</Text>
+          <View style={styles.seal}>
+            <MaterialCommunityIcons name="book-open-page-variant" size={13} color="#5a3320" />
+            <Text style={styles.sealText}>
+              {readCount} of {TOTAL_WORKS} works read
+            </Text>
+          </View>
+        </View>
+      </SafeAreaView>
+    </View>
   );
 }
 
-export default function HomeScreen() {
+function MapMarker({ def, onPress }: { def: MarkerDef; onPress: () => void }) {
+  const t = getRegion(def.region);
+  const pulse = useSharedValue(0);
+
+  useEffect(() => {
+    pulse.value = withRepeat(withTiming(1, { duration: 2600, easing: Easing.out(Easing.quad) }), -1, false);
+  }, [pulse]);
+
+  const halo = useAnimatedStyle(() => ({
+    opacity: interpolate(pulse.value, [0, 1], [0.5, 0]),
+    transform: [{ scale: interpolate(pulse.value, [0, 1], [0.8, 2.2]) }],
+  }));
+
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
-
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
-
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
-
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
+    <Pressable
+      onPress={onPress}
+      style={[styles.marker, { left: `${def.x * 100}%`, top: `${def.y * 100}%` }]}
+      accessibilityRole="button"
+      accessibilityLabel={t.name}>
+      <View style={styles.markerDotWrap}>
+        <Animated.View style={[styles.halo, { backgroundColor: t.glow }, halo]} />
+        <View style={[styles.dot, { backgroundColor: t.glow, borderColor: '#fbf3dc' }]}>
+          <MaterialCommunityIcons name={def.icon} size={13} color="#fbf3dc" />
+        </View>
+      </View>
+      <View style={styles.label}>
+        <Text style={styles.labelText}>{t.name}</Text>
+      </View>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
+  root: { flex: 1, backgroundColor: '#c9aa7c', overflow: 'hidden' },
+  burntEdge: {
+    ...StyleSheet.absoluteFillObject,
+    borderWidth: 26,
+    borderColor: 'rgba(58,38,20,0.34)',
+    borderRadius: 30,
+  },
+  headerScrim: { position: 'absolute', top: 0, left: 0, right: 0, height: '24%' },
+
+  header: { alignItems: 'center', gap: 3, paddingTop: 10, paddingHorizontal: 24 },
+  greeting: { fontFamily: AppFonts.displayItalic, fontSize: 34, color: '#3f2d18', letterSpacing: 0.5 },
+  subtitle: { fontFamily: AppFonts.bodyItalic, fontSize: 15, color: '#6b563a' },
+  seal: {
     flexDirection: 'row',
-  },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
     alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
+    gap: 6,
+    marginTop: 10,
+    paddingHorizontal: 13,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: 'rgba(247,240,222,0.72)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(90,51,32,0.4)',
   },
-  heroSection: {
+  sealText: { fontFamily: AppFonts.bodyMedium, fontSize: 13, color: '#5a3320', letterSpacing: 0.3 },
+
+  marker: { position: 'absolute', alignItems: 'center' },
+  markerDotWrap: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
+  halo: { position: 'absolute', width: 30, height: 30, borderRadius: 15 },
+  dot: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     alignItems: 'center',
     justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
+    borderWidth: 2,
+    elevation: 4,
   },
-  title: {
-    textAlign: 'center',
+  label: {
+    marginTop: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    backgroundColor: 'rgba(251,243,220,0.82)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(90,51,32,0.35)',
   },
-  code: {
-    textTransform: 'uppercase',
-  },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
-  },
+  labelText: { fontFamily: AppFonts.displayMedium, fontSize: 14, color: '#3f2d18', letterSpacing: 0.5 },
 });
