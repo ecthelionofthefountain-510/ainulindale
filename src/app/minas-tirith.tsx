@@ -1,8 +1,8 @@
 /**
  * Minas Tirith — the White City of Gondor, seven tiers of stone climbing to the
  * Tower of Ecthelion. You look up at the citadel at dawn; enter the great hall to
- * see your deeds graven in stone. The tower and the White Tree are "soon", so the
- * scene reads like the Shire's and Rivendell's.
+ * see your deeds graven in stone, or look up to the Tower of Ecthelion for the
+ * Archives — your reading tallied. The White Tree is still "soon".
  *
  * Placeholder art — swap MinasTirithArt for the real image and keep the hotspots.
  */
@@ -11,6 +11,7 @@ import { useCallback, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { AchievementsPanel } from '@/components/achievements-panel';
+import { ArchivesPanel } from '@/components/archives-panel';
 import { Embers } from '@/components/embers';
 import { HearthGlow } from '@/components/scene/hearth-glow';
 import { SceneToast } from '@/components/scene/scene-toast';
@@ -20,14 +21,15 @@ const MINAS_TIRITH = require('../../assets/scenes/minas-tirith.jpg');
 
 export default function MinasTirithScene() {
   const [panelOpen, setPanelOpen] = useState(false);
+  const [archivesOpen, setArchivesOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const say = useCallback((text: string) => setToast(text), []);
 
   // Tuned to the real art: the Hall of the Kings entrance is centre, the Tower of
   // Ecthelion rises upper-centre, the White Tree stands in the fountain lower-left.
   const hotspots: Hotspot[] = [
-    { id: 'hall', x: 0.3, y: 0.46, w: 0.44, h: 0.32, label: 'The great hall', onPress: () => setPanelOpen(true) },
-    { id: 'tower', x: 0.37, y: 0.05, w: 0.22, h: 0.4, label: 'The Tower of Ecthelion', onPress: () => say('The tower · your stats, soon') },
+    { id: 'hall', x: 0.3, y: 0.46, w: 0.44, h: 0.32, label: 'The great hall · deeds', onPress: () => setPanelOpen(true) },
+    { id: 'tower', x: 0.37, y: 0.05, w: 0.22, h: 0.4, label: 'The Tower of Ecthelion · the Archives', onPress: () => setArchivesOpen(true) },
     { id: 'tree', x: 0.14, y: 0.54, w: 0.27, h: 0.34, label: 'The White Tree', onPress: () => say('The White Tree · your streaks, soon') },
   ];
 
@@ -39,7 +41,7 @@ export default function MinasTirithScene() {
       subtitle="the deeds you are remembered by"
       hotspots={hotspots}
       placeholder={<MinasTirithArt />}
-      zoomed={panelOpen}
+      zoomed={panelOpen || archivesOpen}
       overlays={
         <SceneOverlay>
           <HearthGlow left="76%" top="24%" size={150} color="#ffe6b0" />
@@ -48,6 +50,7 @@ export default function MinasTirithScene() {
       }>
       <SceneToast text={toast} onDone={() => setToast(null)} />
       <AchievementsPanel open={panelOpen} onClose={() => setPanelOpen(false)} />
+      <ArchivesPanel open={archivesOpen} onClose={() => setArchivesOpen(false)} />
     </SceneView>
   );
 }
