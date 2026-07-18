@@ -2,7 +2,8 @@
  * Rivendell — the Last Homely House as a hall you stand inside. A great stained
  * window pours pale light over ivy and tall shelves; a chandelier of candles
  * glimmers overhead. Tap the shelves to open the Compendium of lore, or the
- * stained window to unroll the Annals of Arda; the reading desk is still "soon".
+ * stained window for the Annals of Arda and the lineages of the Half-elven; the
+ * reading desk is still "soon".
  *
  * The hall is placeholder art — swap RivendellArt for the real image when it
  * lands and keep the hotspots' fractional positions.
@@ -30,7 +31,7 @@ export default function RivendellScene() {
   // centre-right, the reading desk sits lower-right under the candle.
   const hotspots: Hotspot[] = [
     { id: 'shelves', x: 0.0, y: 0.22, w: 0.36, h: 0.55, label: 'The great shelves', onPress: () => setPanelOpen(true) },
-    { id: 'window', x: 0.46, y: 0.05, w: 0.37, h: 0.62, label: 'The stained window · the Annals of Arda', onPress: () => setAnnalsOpen(true) },
+    { id: 'window', x: 0.46, y: 0.05, w: 0.37, h: 0.62, label: 'The stained window · Annals & lineages', onPress: () => setAnnalsOpen(true) },
     { id: 'desk', x: 0.55, y: 0.72, w: 0.44, h: 0.26, label: 'The reading desk', onPress: () => say('The reading desk · the day’s lore, soon') },
   ];
 
