@@ -10,7 +10,7 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
@@ -98,7 +98,7 @@ export default function MapScreen() {
       <Animated.View style={[StyleSheet.absoluteFill, worldStyle]}>
         <Image source={MIDDLE_EARTH} style={StyleSheet.absoluteFill} contentFit="cover" />
         {MARKERS.map((m) => (
-          <MapMarker key={m.region} def={m} onPress={() => enterPlace(m)} />
+          <MapMarker key={m.region} def={m} onEnter={() => enterPlace(m)} />
         ))}
       </Animated.View>
 
@@ -130,11 +130,16 @@ export default function MapScreen() {
 }
 
 /** A place is marked only by a soft breathing glow and a slow ring pulsing out —
- *  a quiet "you can go here" that stays out of the map's way. */
-function MapMarker({ def, onPress }: { def: MarkerDef; onPress: () => void }) {
+ *  a quiet "you can go here" that stays out of the map's way. Press a glow and the
+ *  place's name fades in above it; a quick tap still flies you in, but linger
+ *  (a held press) and you only peek the name without travelling. */
+function MapMarker({ def, onEnter }: { def: MarkerDef; onEnter: () => void }) {
   const t = getRegion(def.region);
   const pulse = useSharedValue(0);
   const breathe = useSharedValue(0);
+  const reveal = useSharedValue(0);
+  // A long press means "I'm just reading the name" — don't travel on release.
+  const held = useRef(false);
 
   useEffect(() => {
     pulse.value = withRepeat(withTiming(1, { duration: 3000, easing: Easing.out(Easing.quad) }), -1, false);
@@ -149,14 +154,39 @@ function MapMarker({ def, onPress }: { def: MarkerDef; onPress: () => void }) {
     opacity: interpolate(breathe.value, [0, 1], [0.4, 0.8]),
     transform: [{ scale: interpolate(breathe.value, [0, 1], [0.85, 1.12]) }],
   }));
+  const label = useAnimatedStyle(() => ({
+    opacity: reveal.value,
+    transform: [
+      { translateY: interpolate(reveal.value, [0, 1], [7, 0]) },
+      { scale: interpolate(reveal.value, [0, 1], [0.9, 1]) },
+    ],
+  }));
 
   return (
     <Pressable
-      onPress={onPress}
+      onPressIn={() => {
+        held.current = false;
+        reveal.value = withTiming(1, { duration: 220, easing: Easing.out(Easing.cubic) });
+      }}
+      onLongPress={() => {
+        held.current = true;
+      }}
+      delayLongPress={300}
+      onPress={() => {
+        if (!held.current) onEnter();
+      }}
+      onPressOut={() => {
+        reveal.value = withTiming(0, { duration: 200, easing: Easing.in(Easing.quad) });
+      }}
       hitSlop={20}
       style={[styles.marker, { left: `${def.x * 100}%`, top: `${def.y * 100}%` }]}
       accessibilityRole="button"
       accessibilityLabel={t.name}>
+      <Animated.View style={styles.markerLabelWrap}>
+        <Animated.View style={[styles.markerLabel, { borderColor: t.glow, shadowColor: t.glow }, label]}>
+          <Text style={styles.markerLabelText}>{t.name}</Text>
+        </Animated.View>
+      </Animated.View>
       <Animated.View style={[styles.markerRing, { borderColor: t.glow }, ring]} />
       <Animated.View style={[styles.markerCore, { backgroundColor: t.glow, shadowColor: t.glow }, core]} />
     </Pressable>
@@ -200,6 +230,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  markerLabelWrap: {
+    position: 'absolute',
+    bottom: 27,
+    left: -100,
+    right: -100,
+    alignItems: 'center',
+    pointerEvents: 'none',
+  },
+  markerLabel: {
+    paddingHorizontal: 13,
+    paddingVertical: 5,
+    borderRadius: 14,
+    backgroundColor: 'rgba(247,240,222,0.94)',
+    borderWidth: StyleSheet.hairlineWidth,
+    shadowOpacity: 0.45,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 5,
+  },
+  markerLabelText: { fontFamily: AppFonts.display, fontSize: 17, color: '#3f2d18', letterSpacing: 0.4 },
   markerRing: { position: 'absolute', width: 24, height: 24, borderRadius: 12, borderWidth: 2 },
   markerCore: {
     width: 10,
