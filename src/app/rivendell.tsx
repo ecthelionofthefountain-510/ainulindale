@@ -1,22 +1,22 @@
 /**
  * Rivendell — the Last Homely House as a hall you stand inside. A great stained
  * window pours pale light over ivy and tall shelves; a chandelier of candles
- * glimmers overhead. Tap the shelves to open the Compendium of lore, or the
- * stained window for the Annals of Arda and the lineages of the Half-elven; the
- * reading desk is still "soon".
+ * glimmers overhead. Three objects answer: the shelves open the Compendium of
+ * lore, the stained window the Annals of Arda (the timeline), and the reading
+ * desk unrolls the Houses — the genealogies of Middle-earth.
  *
  * The hall is placeholder art — swap RivendellArt for the real image when it
  * lands and keep the hotspots' fractional positions.
  */
 import { LinearGradient } from 'expo-linear-gradient';
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { AnnalsPanel } from '@/components/annals-panel';
 import { Embers } from '@/components/embers';
+import { LineagePanel } from '@/components/lineage-panel';
 import { LorePanel } from '@/components/lore-panel';
 import { HearthGlow } from '@/components/scene/hearth-glow';
-import { SceneToast } from '@/components/scene/scene-toast';
 import { Hotspot, SceneOverlay, SceneView } from '@/components/scene/scene-view';
 
 const RIVENDELL = require('../../assets/scenes/rivendell.jpg');
@@ -24,15 +24,14 @@ const RIVENDELL = require('../../assets/scenes/rivendell.jpg');
 export default function RivendellScene() {
   const [panelOpen, setPanelOpen] = useState(false);
   const [annalsOpen, setAnnalsOpen] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
-  const say = useCallback((text: string) => setToast(text), []);
+  const [lineageOpen, setLineageOpen] = useState(false);
 
   // Tuned to the real art: shelves fill the left wall, the tall stained window is
   // centre-right, the reading desk sits lower-right under the candle.
   const hotspots: Hotspot[] = [
-    { id: 'shelves', x: 0.0, y: 0.22, w: 0.36, h: 0.55, label: 'The great shelves', onPress: () => setPanelOpen(true) },
-    { id: 'window', x: 0.46, y: 0.05, w: 0.37, h: 0.62, label: 'The stained window · Annals & lineages', onPress: () => setAnnalsOpen(true) },
-    { id: 'desk', x: 0.55, y: 0.72, w: 0.44, h: 0.26, label: 'The reading desk', onPress: () => say('The reading desk · the day’s lore, soon') },
+    { id: 'shelves', x: 0.0, y: 0.22, w: 0.36, h: 0.55, label: 'The great shelves · lore', onPress: () => setPanelOpen(true) },
+    { id: 'window', x: 0.46, y: 0.05, w: 0.37, h: 0.62, label: 'The stained window · the Annals of Arda', onPress: () => setAnnalsOpen(true) },
+    { id: 'desk', x: 0.55, y: 0.72, w: 0.44, h: 0.26, label: 'The reading desk · the Houses of Middle-earth', onPress: () => setLineageOpen(true) },
   ];
 
   return (
@@ -43,7 +42,7 @@ export default function RivendellScene() {
       subtitle="the Last Homely House"
       hotspots={hotspots}
       placeholder={<RivendellArt />}
-      zoomed={panelOpen || annalsOpen}
+      zoomed={panelOpen || annalsOpen || lineageOpen}
       overlays={
         <SceneOverlay>
           <HearthGlow left="45%" top="5%" size={110} color="#ffe6a8" />
@@ -51,9 +50,9 @@ export default function RivendellScene() {
           <Embers count={12} color="rgba(220,240,235,0.55)" />
         </SceneOverlay>
       }>
-      <SceneToast text={toast} onDone={() => setToast(null)} />
       <LorePanel open={panelOpen} onClose={() => setPanelOpen(false)} />
       <AnnalsPanel open={annalsOpen} onClose={() => setAnnalsOpen(false)} />
+      <LineagePanel open={lineageOpen} onClose={() => setLineageOpen(false)} />
     </SceneView>
   );
 }
