@@ -1,9 +1,10 @@
 /**
  * The Annals of Arda — the Ages of the World, read through Rivendell's stained
  * window (Elrond, who remembers them all). A vertical timeline: eras, each with a
- * handful of turning-point events. Dates follow Tolkien's reckoning — Years of the
- * Trees are given as mood, not number; First Age counts from the first Sunrise.
- * Keep bodies short enough to read at a glance; easy to grow.
+ * handful of turning-point events. It opens before time itself, with the Music of
+ * the Ainur, and runs to the Dominion of Men. Dates follow Tolkien's reckoning —
+ * the early ages are given as mood, not number; the First Age counts from the
+ * first Sunrise. Keep bodies short enough to read at a glance; easy to grow.
  */
 
 export interface AnnalEvent {
@@ -26,13 +27,69 @@ export interface AnnalEra {
 
 export const ANNALS: AnnalEra[] = [
   {
+    id: 'ainulindale',
+    name: 'The Ainulindalë',
+    span: 'before time',
+    note: 'The Music of the Ainur, from which the World was made.',
+    events: [
+      {
+        year: 'the Timeless Halls',
+        title: 'Ilúvatar and the Ainur',
+        body: 'Eru Ilúvatar, the One, kindles the Ainur from his thought, and to each he offers themes of music to sing before him.',
+      },
+      {
+        year: 'the Great Music',
+        title: 'The Music of the Ainur',
+        body: 'In three themes the Ainur make a mighty song. Melkor weaves in discord of his own, and thrice Ilúvatar answers it and turns it to his design.',
+      },
+      {
+        year: 'the Vision',
+        title: 'The World is shown',
+        body: 'Ilúvatar unveils a vision of the World their Music has wrought — its ages, its seas and lands, and the coming of Elves and Men.',
+      },
+      {
+        year: 'Eä',
+        title: 'The World that Is',
+        body: 'Ilúvatar speaks the word Eä — “Let these things Be!” — and kindles the Flame Imperishable at the heart of the World, and it begins to be.',
+      },
+    ],
+  },
+  {
+    id: 'lamps',
+    name: 'The Years of the Lamps',
+    span: 'the Spring of Arda',
+    note: 'Two Lamps light the world, until Melkor casts them down.',
+    events: [
+      {
+        year: 'the Descent',
+        title: 'The Valar enter Arda',
+        body: 'The Ainur who love the World go down into it as the Valar and the Maiar, and labour to shape Arda amid the marring of Melkor.',
+      },
+      {
+        year: 'the Two Lamps',
+        title: 'Illuin and Ormal',
+        body: 'Aulë forges two great Lamps — Illuin in the north, Ormal in the south — and their light floods the world and awakens its growth.',
+      },
+      {
+        year: 'the Spring of Arda',
+        title: 'The isle of Almaren',
+        body: 'On an isle in a great lake the Valar make their first dwelling, and green things spread across the lands in the Spring of Arda.',
+      },
+      {
+        year: 'the Fall of the Lamps',
+        title: 'Melkor throws them down',
+        body: 'From his fortress of Utumno Melkor casts down the Lamps. Their ruin breaks the shape of the world and ends the Spring, and the Valar withdraw into the West.',
+      },
+    ],
+  },
+  {
     id: 'trees',
     name: 'The Years of the Trees',
     span: 'the Elder Days',
     note: 'Valinor lit by Two Trees, before Sun or Moon.',
     events: [
       {
-        year: 'Days before Days',
+        year: 'the Bliss of Valinor',
         title: 'The Two Trees are kindled',
         body: 'Yavanna sings up Telperion and Laurelin, silver and gold, whose mingling light measures the ages of the Blessed Realm.',
       },
