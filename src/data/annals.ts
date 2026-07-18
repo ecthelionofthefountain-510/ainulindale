@@ -45,7 +45,7 @@ export const ANNALS: AnnalEra[] = [
       {
         year: 'the Vision',
         title: 'The World is shown',
-        body: 'Ilúvatar unveils a vision of the World their Music has wrought — its ages, its seas and lands, and the coming of Elves and Men.',
+        body: 'Ilúvatar unveils a vision of the World their Music has wrought — its seas and lands, and the coming of Elves and Men. It is shown only to the Dominion of Men, then taken away.',
       },
       {
         year: 'Eä',
@@ -63,7 +63,12 @@ export const ANNALS: AnnalEra[] = [
       {
         year: 'the Descent',
         title: 'The Valar enter Arda',
-        body: 'The Ainur who love the World go down into it as the Valar and the Maiar, and labour to shape Arda amid the marring of Melkor.',
+        body: 'The Ainur who love the World go down into it as the Valar and the Maiar, and begin to shape Arda after the image of the Vision.',
+      },
+      {
+        year: 'the First War',
+        title: 'Tulkas drives out Melkor',
+        body: 'Melkor contests the mastery of Arda and mars all their labour, until Tulkas comes last into the World; before his laughter and his strength Melkor flees into the outer dark.',
       },
       {
         year: 'the Two Lamps',
@@ -78,7 +83,7 @@ export const ANNALS: AnnalEra[] = [
       {
         year: 'the Fall of the Lamps',
         title: 'Melkor throws them down',
-        body: 'From his fortress of Utumno Melkor casts down the Lamps. Their ruin breaks the shape of the world and ends the Spring, and the Valar withdraw into the West.',
+        body: 'Returning in secret, Melkor delves Utumno and casts down the Lamps. Their fall drowns Almaren and rends the shape of the world, and the Valar forsake it and raise up Aman in the West.',
       },
     ],
   },
